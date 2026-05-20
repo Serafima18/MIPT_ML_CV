@@ -49,7 +49,14 @@ def affine_backward(dout, cache):
     - db: Градиент относительно b, форма (M,)
     """
     x, w, b = cache
-    dx, dw, db = None, None, None
+    x_reshaped = x.reshape(x.shape[0], -1)
+
+    dx = dout @ w.T
+    dx = dx.reshape(x.shape)
+
+    dw = x_reshaped.T @ dout
+
+    db = np.sum(dout, axis=0)
     ###########################################################################
     # TODO:  Реализуйте обратный проход полносвязного слоя.         
     ###########################################################################
@@ -93,7 +100,8 @@ def relu_backward(dout, cache):
     """
     dx, x = None, cache
     ###########################################################################
-    # TODO: Реализуйте RELU на обраьном проходе
+    dx = dout.copy()
+    dx[x <= 0] = 0
     ###########################################################################
     #
     ###########################################################################
@@ -112,7 +120,21 @@ def softmax_loss(x, y):
     - loss: Скаляр, задающий функцию потерь
     - dx: Градиент функции потерь относительно x
     """
-    loss, dx = None, None
+    shifted_logits = x - np.max(x, axis=1, keepdims=True)
+
+    Z = np.sum(np.exp(shifted_logits), axis=1, keepdims=True)
+
+    log_probs = shifted_logits - np.log(Z)
+
+    probs = np.exp(log_probs)
+
+    N = x.shape[0]
+
+    loss = -np.sum(log_probs[np.arange(N), y]) / N
+
+    dx = probs.copy()
+    dx[np.arange(N), y] -= 1
+    dx /= N
 
     ###########################################################################
     # YOUR CODE
